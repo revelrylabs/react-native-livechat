@@ -48,15 +48,25 @@ export default class Chat extends React.Component {
 		if (isChatOn) {
 			return (
 				<View
-					animation="fadeInUp"
+					animation='fadeInUp'
 					style={styles.container}
 					ref={(ref) => {
 						this.chat = ref
 					}}
 				>
-					<NavigationBar chatTitle={chatTitle} closeChat={closeChat} />
-					{isReconnecting && <Text style={styles.connectionStatus}>Reconnecting...</Text>}
-					{headerText && <Text style={styles.status}>{headerText}</Text>}
+					{this.props.NavBarComponent ? (
+						<this.props.NavBarComponent
+							chatTitle={chatTitle}
+							closeChat={closeChat}
+							isReconnecting={isReconnecting}
+							headerText={headerText} />
+					) : (
+						<>
+							<NavigationBar chatTitle={chatTitle} closeChat={closeChat} />
+							{isReconnecting && <Text style={styles.connectionStatus}>Reconnecting...</Text>}
+							{headerText && <Text style={styles.status}>{headerText}</Text>}
+						</>
+					)}
 					<GiftedChat
 						inverted={false}
 						messages={messages}
@@ -105,7 +115,7 @@ const styles = StyleSheet.create({
 		top: 0,
 		left: 0,
 		flexDirection: 'column',
-		backgroundColor: '#fff',
+		backgroundColor: '#121117',
 	},
 	navigation: {
 		flex: 1,
