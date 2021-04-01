@@ -1,1 +1,5 @@
 node_modules/
+
+# JetBrains IDE Specific
+/.idea
+.iml
