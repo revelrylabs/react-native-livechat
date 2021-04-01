@@ -3,11 +3,9 @@ import { View, Dimensions, StyleSheet, Image } from 'react-native'
 import PropTypes from 'prop-types'
 import ChatBubble from './components/ChatBubble'
 import Chat from './components/Chat'
-import { init } from '@livechat/livechat-visitor-sdk'
 import { AuthWebView } from '@livechat/customer-auth'
 import { init as CustomerSdkInit } from '@livechat/customer-sdk'
 import * as lc3Parsers from './lc3Parsers'
-import * as lc2Parsers from './lc2Parsers'
 
 const chatIcon = require('./../assets/chat.png')
 const { width } = Dimensions.get('window')
@@ -19,7 +17,7 @@ export default class LiveChat extends Component {
 
 		this.state = {
 			isChatOn: false,
-			protocol: 'lc2',
+			protocol: 'lc3',
 			messages: [],
 			users: {},
 			queued: false,
@@ -38,31 +36,15 @@ export default class LiveChat extends Component {
 	}
 
 	componentDidMount() {
-		const visitorSDK = init({
-			license: this.props.license,
-			group: this.props.group,
-			appName: 'ReactNative',
+		this.init()
+	}
+
+	init() {
+		this.initCustomerSdk({
+			licenseId: this.props.license,
+			clientId: this.props.clientId,
+			redirectUri: this.props.redirectUri,
 		})
-
-		this.initVisitorSdk(visitorSDK)
-
-		visitorSDK.on('protocol_upgraded', () => {
-			this.setState({
-				protocol: 'lc3',
-				users: {},
-				messages: [],
-			})
-			this.initCustomerSdk({
-				licenseId: this.props.license,
-				clientId: this.props.clientId,
-				redirectUri: this.props.redirectUri,
-				region: this.props.region,
-			})
-			visitorSDK.destroy()
-		})
-
-		this.props.onLoaded(visitorSDK)
-		this.visitorSDK = visitorSDK
 	}
 
 	getCustomer = () => {
@@ -111,23 +93,12 @@ export default class LiveChat extends Component {
 	}
 
 	handleInputChange = (text) => {
-		if (this.state.protocol === 'lc2') {
-			this.visitorSDK.setSneakPeek({ text })
-		} else {
-			if (!this.state.chatId) {
-				return
-			}
-			this.customerSDK.setSneakPeek({
-				chatId: this.state.chatId,
-				sneakPeekText: text,
-			})
+		if (!this.state.chatId) {
+			return
 		}
-	}
-
-	sendNewMessageLc2 = (message, customId) => {
-		return this.visitorSDK.sendMessage({
-			customId,
-			text: message,
+		this.customerSDK.setSneakPeek({
+			chatId: this.state.chatId,
+			sneakPeekText: text,
 		})
 	}
 
@@ -189,6 +160,22 @@ export default class LiveChat extends Component {
 		})
 	}
 
+	isBackgroundMessage = (parsedMessage) => {
+		return !this.state.isChatOn &&
+			this.props.onBackgroundMessage &&
+			parsedMessage.user &&
+			parsedMessage.user.type == 'agent'
+	}
+
+	requiresRestart = (rawEvent) => {
+		return rawEvent.type === 'system_message' && rawEvent.systemMessageType === 'manual_archived_agent'
+	}
+
+	reInit = () => {
+		this.init()
+	}
+
+
 	handleSendMessage = (message, quickReply) => {
 		const newEventId = String(Math.random())
 		this.setState({
@@ -206,11 +193,9 @@ export default class LiveChat extends Component {
 			],
 		})
 		let sendMessagePromise
-		if (this.state.protocol === 'lc3') {
-			sendMessagePromise = this.sendNewMessageLc3(message, quickReply, newEventId)
-		} else {
-			sendMessagePromise = this.sendNewMessageLc2(message, newEventId)
-		}
+
+		sendMessagePromise = this.sendNewMessageLc3(message, quickReply, newEventId)
+
 		sendMessagePromise
 			.then(() => {
 				this.updateEvent(newEventId, {
@@ -223,71 +208,7 @@ export default class LiveChat extends Component {
 			})
 	}
 
-	initVisitorSdk(visitorSdk) {
-		visitorSdk.on('connection_status_changed', ({ status }) => {
-			this.setState({
-				connectionState: status,
-			})
-		})
-		visitorSdk.on('new_message', (newMessage) => {
-			const hasEvent = this.state.messages.some(
-				(_stateEvent) => _stateEvent._id === newMessage.id || _stateEvent._id === newMessage.customId,
-			)
-			if (hasEvent) {
-				return
-			}
-			const user = this.state.users[newMessage.authorId]
-			this.setState({
-				messages: [...this.state.messages, lc2Parsers.parseNewMessage(user, newMessage)],
-			})
-		})
-		visitorSdk.on('chat_started', (chatData) => {
-			this.setState({
-				queued: false,
-				chatActive: true,
-			})
-		})
-		visitorSdk.on('agent_changed', (newAgent) => {
-			this.setState({
-				users: {
-					...this.state.users,
-					[newAgent.id]: lc2Parsers.parseNewAgent(newAgent),
-				},
-			})
-		})
-		visitorSdk.on('status_changed', (statusData) => {
-			this.setState({
-				onlineStatus: statusData.status === 'online',
-			})
-		})
-		visitorSdk.on('visitor_queued', (queueData) => {
-			this.setState({
-				queued: true,
-				queueData,
-			})
-		})
-		visitorSdk.on('typing_indicator', (typingData) => {
-			this.setState({
-				isTyping: typingData.isTyping,
-			})
-		})
-		visitorSdk.on('chat_ended', () => {
-			this.addSystemMessage('Chat is closed')
-			this.setState({
-				chatActive: false,
-			})
-		})
-		visitorSdk.on('visitor_data', (visitorData) => {
-			this.setState({
-				users: {
-					...this.state.users,
-					[visitorData.id]: lc2Parsers.parseVisitorData(visitorData),
-				},
-			})
-		})
-	}
-
-	initCustomerSdk({ licenseId, clientId, redirectUri, region }) {
+	initCustomerSdk({ licenseId, clientId, redirectUri }) {
 		const config = {
 			licenseId: Number(licenseId, 10),
 			clientId,
@@ -296,9 +217,7 @@ export default class LiveChat extends Component {
 		if (this.props.group !== null) {
 			config.groupId = this.props.group
 		}
-		if (region) {
-			config.region = region
-		}
+
 		const customerSDK = CustomerSdkInit(config)
 		this.customerSDK = customerSDK
 		customerSDK.on('incoming_event', ({ event }) => {
@@ -310,6 +229,14 @@ export default class LiveChat extends Component {
 			}
 			const parsed = lc3Parsers.parseEvent(event, this.getUser(event.authorId))
 			if (parsed) {
+				if (this.isBackgroundMessage(parsed)) {
+					this.props.onBackgroundMessage(parsed)
+				}
+
+				if (this.requiresRestart(event)) {
+					this.reInit()
+				}
+
 				this.setState({
 					messages: [...this.state.messages, parsed],
 					isTyping: false,
@@ -352,6 +279,8 @@ export default class LiveChat extends Component {
 				connectionState: 'connected',
 				onlineStatus: availability === 'online',
 			})
+
+			customerSDK.updateCustomer(this.props.customerData)
 			customerSDK.listChats().then((data) => {
 				const { chatsSummary, totalChats } = data
 				if (totalChats) {
@@ -402,13 +331,13 @@ export default class LiveChat extends Component {
 			})
 		})
 
-		customerSDK.on('chat_deactivated', () => {
+		customerSDK.on('thread_closed', () => {
 			this.setState({
 				chatActive: false,
 			})
 		})
 
-		customerSDK.on('incoming_chat', () => {
+		customerSDK.on('incoming_chat_thread', () => {
 			this.setState({
 				chatActive: true,
 			})
@@ -462,15 +391,15 @@ export default class LiveChat extends Component {
 
 		return [
 			<ChatBubble
-				key="bubble"
+				key='bubble'
 				openChat={this.openChat}
 				bubble={this.state.bubble}
 				disabled={this.props.movable}
 				styles={this.props.bubbleStyles}
 			/>,
-			this.visitorSDK && (
+			(
 				<Chat
-					key="chat"
+					key='chat'
 					{...this.props}
 					isChatOn={isChatOn}
 					closeChat={this.closeChat}
@@ -485,9 +414,10 @@ export default class LiveChat extends Component {
 					onInputChange={this.handleInputChange}
 					disableComposer={this.shouldDisableComposer()}
 					headerText={this.getHeaderText()}
+					NavBarComponent={this.props.NavBarComponent}
 				/>
 			),
-			<AuthWebView key="auth" />,
+			<AuthWebView style={{position: 'absolute', top: 5000, left: 5000, opacity: 0}} key="auth" />,
 		]
 	}
 }
@@ -504,19 +434,24 @@ LiveChat.propTypes = {
 	onLoaded: PropTypes.func,
 	clientId: PropTypes.string,
 	redirectUri: PropTypes.string,
+	customerData: PropTypes.object,
+	onBackgroundMessage: PropTypes.func,
+	NavBarComponent: PropTypes.elementType,
 }
 
 LiveChat.defaultProps = {
-	bubbleColor: '#2962FF',
+	bubbleColor: '#F4511D',
 	bubbleStyles: {
 		position: 'absolute',
 		bottom: 12,
 		right: 12,
 	},
 	movable: true,
-	onLoaded: () => {},
+	onLoaded: () => {
+	},
 	group: 0,
 	chatTitle: 'Chat with us!',
 	greeting: 'Welcome to our LiveChat!\nHow may We help you?',
 	noAgents: 'Our agents are not available right now.',
+	customerData: {name:'User', email:"someone@somewhere.com"}
 }
