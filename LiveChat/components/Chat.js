@@ -55,8 +55,11 @@ export default class Chat extends React.Component {
 					}}
 				>
 					{this.props.NavBarComponent ? (
-						<this.props.NavBarComponent chatTitle={chatTitle} closeChat={closeChat} isReconnecting={isReconnecting}
-																				headerText={headerText} />
+						<this.props.NavBarComponent
+							chatTitle={chatTitle}
+							closeChat={closeChat}
+							isReconnecting={isReconnecting}
+							headerText={headerText} />
 					) : (
 						<>
 							<NavigationBar chatTitle={chatTitle} closeChat={closeChat} />
