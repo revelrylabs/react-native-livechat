@@ -1,5 +1,7 @@
 # LiveChat for React Native
 
+### This fork was created to fix bugs within the original package for more reliable usage.
+
 This is a React Native component to easily add [LiveChat widget](https://www.livechatinc.com/) to your application.
 
 It works for both iOS and Android.
@@ -25,7 +27,7 @@ If you don't have an account, you can create one [here](https://www.livechatinc.
 
 To import LiveChat for React Native, run the following command to install required dependency (react-native-webview) and react-native-livechat library:
 
-```javascript
+```bash
 npm install react-native-webview react-native-livechat --save
 ```
 
