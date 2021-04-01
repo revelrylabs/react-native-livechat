@@ -417,7 +417,7 @@ export default class LiveChat extends Component {
 					NavBarComponent={this.props.NavBarComponent}
 				/>
 			),
-			<AuthWebView style={{position: 'absolute', top: 5000, left: 5000, opacity: 0}} key="auth" />,
+			<View><AuthWebView style={{position: 'absolute', top: 5000, left: 5000, opacity: 0}} key="auth" /></View>,
 		]
 	}
 }
