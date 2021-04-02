@@ -377,9 +377,6 @@ export default class LiveChat extends Component {
 	}
 
 	shouldDisableComposer = () => {
-		if (!this.state.onlineStatus && !this.state.chatActive) {
-			return true
-		}
 		if (this.state.queued) {
 			return true
 		}
