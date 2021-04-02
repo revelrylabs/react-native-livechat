@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Dimensions, StyleSheet, Image } from 'react-native'
+import { Dimensions, Image, StyleSheet, View } from 'react-native'
 import PropTypes from 'prop-types'
 import ChatBubble from './components/ChatBubble'
 import Chat from './components/Chat'
@@ -49,8 +49,7 @@ export default class LiveChat extends Component {
 
 	getCustomer = () => {
 		const customerId = Object.keys(this.state.users).find((userId) => this.state.users[userId].type === 'customer')
-		const user = this.state.users[customerId]
-		return user
+		return this.state.users[customerId]
 	}
 
 	getUser = (id) => {
@@ -148,7 +147,7 @@ export default class LiveChat extends Component {
 					},
 					continuous: true,
 				})
-				.then((chat) => {
+				.then(() => {
 					this.setState({
 						chatActive: true,
 					})
@@ -164,7 +163,7 @@ export default class LiveChat extends Component {
 		return !this.state.isChatOn &&
 			this.props.onBackgroundMessage &&
 			parsedMessage.user &&
-			parsedMessage.user.type == 'agent'
+			parsedMessage.user.type === 'agent'
 	}
 
 	requiresRestart = (rawEvent) => {
@@ -292,7 +291,7 @@ export default class LiveChat extends Component {
 						.getChatHistory({ chatId: chatsSummary[0].id })
 						.next()
 						.then((historyData) => {
-							const { value, done } = historyData
+							const { value} = historyData
 							const newThreadEvents = value.threads.map((thread) => {
 								const { events } = thread
 								const newEvents = events.filter(
@@ -447,8 +446,6 @@ LiveChat.defaultProps = {
 		right: 12,
 	},
 	movable: true,
-	onLoaded: () => {
-	},
 	group: 0,
 	chatTitle: 'Chat with us!',
 	greeting: 'Welcome to our LiveChat!\nHow may We help you?',
