@@ -377,6 +377,9 @@ export default class LiveChat extends Component {
 	}
 
 	shouldDisableComposer = () => {
+		if (!this.state.onlineStatus && !this.state.chatActive && !this.props.allowOfflineMessages) {
+			return true
+		}
 		if (this.state.queued) {
 			return true
 		}
@@ -450,5 +453,6 @@ LiveChat.defaultProps = {
 	chatTitle: 'Chat with us!',
 	greeting: 'Welcome to our LiveChat!\nHow may We help you?',
 	noAgents: 'Our agents are not available right now.',
-	customerData: {name:'User', email:"someone@somewhere.com"}
+	customerData: {name:'User', email:"someone@somewhere.com"},
+	allowOfflineMessages: false
 }
