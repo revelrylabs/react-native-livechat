@@ -30,7 +30,7 @@
     "@livechat/customer-auth": "^0.4.0-alpha.6",
     "@livechat/customer-sdk": "^2.0.4",
     "@livechat/livechat-visitor-sdk": "0.37.0-4",
-    "better-npm-audit": "^1.8.1",
+    "better-npm-audit": "^3.1.0",
     "react-native-animatable": "^1.3.3",
     "react-native-gifted-chat": "^0.16.3"
   }
